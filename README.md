@@ -21,3 +21,15 @@ AzureNetworkAnalytics_CL
 However, you will notice that there is a time lag, and you will not find the very latest logs in Log Analytics. The original NSG Flow logs are stored in storage account, in JSON format, so you could get those logs using the Azure Storage SDK.
 
 You can deploy this Azure Function to parse and identify outbound traffic against an nsg rule of Port_other with an nsg named hdi_nsg.
+
+You will need to add a local.settings.json / application settings of:
+
+    {
+      "IsEncrypted": false,
+      "Values": {
+        "AzureWebJobsStorage": "",
+        "FUNCTIONS_WORKER_RUNTIME": "python",
+        "input_STORAGE": "",
+        "output_STORAGE": ""
+      }
+    }
