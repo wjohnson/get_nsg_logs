@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 def parse_flowlog(data, current_nsg):
     """
     :param data dict(str, str): Contents of a flowlog file in dictionary form.
@@ -35,12 +37,19 @@ def filter_parsed_flowlog(parsed_log, **kwargs):
     :param dstIpAddressNotIn list: List of IP Addresses to exclude based on destination IP.
     :param dstIpAddressDstPortNotIn list(tuple(str,str)): List of IP addresses and ports to excluded
         based on destination IP and port.
+    :param isInLastNMinutes int: 
     :param ruleIs str: Rule field must match ruleIs (a valid NSG rule).
     :param directionIs str: Direction field must match directionIs (O or I).
     """
     filtered_log = []
     for flowlog in parsed_log:
         safe_to_append = 0
+        if "isInLastNMinutes" in kwargs:
+            log_date = datetime.strptime(flowlog["eventTime"][0:19], "%Y-%m-%dT%H:%M:%S")
+            safe_to_append += int(
+                ((datetime.utcnow() - log_date).seconds / 60) <= kwargs["isInLastNMinutes"]
+            )
+
         if "dstIpAddressNotIn" in kwargs:
             safe_to_append += int(flowlog["dstIp"] not in kwargs["dstIpAddressNotIn"])
         if "dstIpAddressDstPortNotIn" in kwargs:

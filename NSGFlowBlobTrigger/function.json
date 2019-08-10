@@ -5,7 +5,7 @@
       "name": "nsgblob",
       "type": "blobTrigger",
       "direction": "in",
-      "path": "insights-logs-networksecuritygroupflowevent/{name}",
+      "path": "insights-logs-networksecuritygroupflowevent/{blobname}.{blobextension}",
       "connection": "input_STORAGE"
     },
     {
@@ -13,7 +13,7 @@
       "type": "blob",
       "direction": "out",
       "connection": "output_STORAGE",
-      "path": "insights-logs-networksecuritygroupflowevent-output/{name}"
+      "path": "insights-logs-networksecuritygroupflowevent-output/{blobname}-{Datetime}.{blobextension}"
     }
   ]
 }

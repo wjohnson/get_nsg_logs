@@ -19,11 +19,13 @@ def main(nsgblob: func.InputStream, outputblob: func.Out[str]) -> None:
         return None
     # Load in the triggered blob's data
     data = json.loads(nsgblob.read().decode('utf-8'))
+    # TODO: Filter the list down the last minute
     # Parse the file to be a list of dictionaries
     parsed_results = parse_flowlog(data, current_nsg)
     logging.info(f"There were {len(parsed_results)} flow log entries found.")
     # Early stopping if there are no logs found
     if len(parsed_results) == 0:
+        logging.info(f"Exiting due to no entries found.")
         return None
     logging.info(f"Sample result: {json.dumps(parsed_results[0])}")
     
@@ -31,12 +33,16 @@ def main(nsgblob: func.InputStream, outputblob: func.Out[str]) -> None:
     allowed_fqdn_ips = get_current_ip_for_fqdns(FQDNS)
     filtered_results = filter_parsed_flowlog(
         parsed_log = parsed_results,
+        isInLastNMinutes = 2,
+        dstIpAddressNotIn = ["40.79.44.59"], # TODO: Figure out what this belongs to!
         dstIpAddressDstPortNotIn = allowed_fqdn_ips,
         ruleIs = "UserRule_Port_other",
         directionIs = "O"
         )
     logging.info(f"There were {len(filtered_results)} flow log entries that matched the criteria.")
-
+    if len(filtered_results) == 0:
+        logging.info(f"Exiting due to no filtered results remaining.")
+        return None
     outputblob.set(json.dumps({"value":filtered_results}))
     logging.info("Completed write to blob")
     
