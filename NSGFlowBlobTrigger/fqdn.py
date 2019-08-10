@@ -4,7 +4,7 @@ FQDNS = [
     ('azure.archive.ubuntu.com',80),
     ('security.ubuntu.com',80),
     ('ocsp.msocsp.com',80),
-    ('ocsp.digicert.com',80),
+    ('ocsp.digicert.com',443),
     ('wawsinfraprodbay063.blob.core.windows.net',443),
     ('registry-1.docker.io',443),
     ('auth.docker.io',443),
