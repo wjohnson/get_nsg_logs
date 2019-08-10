@@ -13,9 +13,9 @@ def main(nsgblob: func.InputStream, outputblob: func.Out[str]) -> None:
                  f"Blob Size: {nsgblob.length} bytes")
     
     try:
-        current_nsg = nsgblob.name.split('/')[8]
+        current_nsg = nsgblob.name.split('/')[9]
     except IndexError:
-        logging.info("Blob found that doesn't have 8 splits.  Exiting.")
+        logging.info("Blob found that doesn't have 10 splits.  Exiting.")
         return None
     # Load in the triggered blob's data
     data = json.loads(nsgblob.read().decode('utf-8'))
