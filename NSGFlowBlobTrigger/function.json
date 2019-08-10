@@ -1,0 +1,19 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "nsgblob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "insights-logs-networksecuritygroupflowevent/{name}",
+      "connection": "input_STORAGE"
+    },
+    {
+      "name": "outputblob",
+      "type": "blob",
+      "direction": "out",
+      "connection": "output_STORAGE",
+      "path": "insights-logs-networksecuritygroupflowevent-output/{name}"
+    }
+  ]
+}
