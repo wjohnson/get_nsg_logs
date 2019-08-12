@@ -7,13 +7,6 @@
       "direction": "in",
       "queueName": "insights-logs-networksecuritygroupflowevent-queue",
       "connection": "input_STORAGE"
-    },
-    {
-      "name": "outputblob",
-      "type": "blob",
-      "direction": "out",
-      "connection": "output_STORAGE",
-      "path": "insights-logs-networksecuritygroupflowevent-output/{queueTrigger}-{Datetime}.json"
     }
   ]
 }

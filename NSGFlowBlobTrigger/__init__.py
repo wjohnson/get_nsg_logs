@@ -7,12 +7,16 @@ from .flowlog import filter_parsed_flowlog, parse_flowlog
 from azure.storage.blob import BlockBlobService
 
 import azure.functions as func
+from datetime import datetime
 
 
+OUTPUT_CONTAINER = "insights-logs-networksecuritygroupflowevent-output"
 
-
-def main(msg: func.QueueMessage, outputblob: func.Out[str]) -> None:
+def main(msg: func.QueueMessage) -> None:
+    load_time = datetime.now().strftime("%Y%m%d%H%M%S")
     block_blob_service = BlockBlobService(connection_string = os.environ.get("input_STORAGE"))
+    output_blob_service = BlockBlobService(connection_string = os.environ.get("output_STORAGE"))
+    
     msg_body = json.loads(msg.get_body().decode('utf-8'))
     try:
         blob_path = msg_body["data"]["url"]
@@ -50,7 +54,7 @@ def main(msg: func.QueueMessage, outputblob: func.Out[str]) -> None:
     allowed_fqdn_ips = get_current_ip_for_fqdns(FQDNS)
     filtered_results = filter_parsed_flowlog(
         parsed_log = parsed_results,
-        isInLastNMinutes = 2,
+        isInLastNMinutes = 1,
         dstIpAddressNotIn = ["40.79.44.59"], # TODO: Figure out what this belongs to!
         dstIpAddressDstPortNotIn = allowed_fqdn_ips,
         ruleIs = "UserRule_Port_other",
@@ -60,6 +64,13 @@ def main(msg: func.QueueMessage, outputblob: func.Out[str]) -> None:
     if len(filtered_results) == 0:
         logging.info(f"Exiting due to no filtered results remaining.")
         return None
-    outputblob.set(json.dumps({"value":filtered_results}))
+    
+    output_blob_service.create_blob_from_text(
+        container_name = OUTPUT_CONTAINER,
+        blob_name = blob_name+load_time+".json",
+        text = json.dumps({"value":filtered_results})
+    )
+
+
     logging.info("Completed write to blob")
     
