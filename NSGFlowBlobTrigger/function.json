@@ -2,10 +2,10 @@
   "scriptFile": "__init__.py",
   "bindings": [
     {
-      "name": "nsgblob",
-      "type": "blobTrigger",
+      "name": "msg",
+      "type": "queueTrigger",
       "direction": "in",
-      "path": "insights-logs-networksecuritygroupflowevent/{blobname}.{blobextension}",
+      "queueName": "insights-logs-networksecuritygroupflowevent-queue",
       "connection": "input_STORAGE"
     },
     {
@@ -13,7 +13,7 @@
       "type": "blob",
       "direction": "out",
       "connection": "output_STORAGE",
-      "path": "insights-logs-networksecuritygroupflowevent-output/{blobname}-{Datetime}.{blobextension}"
+      "path": "insights-logs-networksecuritygroupflowevent-output/{queueTrigger}-{Datetime}.json"
     }
   ]
 }
