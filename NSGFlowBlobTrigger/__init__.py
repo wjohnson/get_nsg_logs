@@ -55,7 +55,6 @@ def main(msg: func.QueueMessage) -> None:
     filtered_results = filter_parsed_flowlog(
         parsed_log = parsed_results,
         isInLastNMinutes = 1,
-        dstIpAddressNotIn = ["40.79.44.59"], # TODO: Figure out what this belongs to!
         dstIpAddressDstPortNotIn = allowed_fqdn_ips,
         ruleIs = "UserRule_Port_other",
         directionIs = "O"

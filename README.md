@@ -1,27 +1,56 @@
 # Reading NSG logs from Blob Storage with an Azure Function
 
-**Please see the [original script](https://github.com/erjosito/get_nsg_logs/blob/master/get_nsg_logs.py) from Jose Moreno for more insight into how the parsing / `get_nsg_logs.py` script works.***
-You might have set your Azure Vnet, with some NSGs. You start rolling apps, to the point where you have many VMs, and many NSGs. Somebody makes an application upgrade, or installs a new application, but traffic is not flowing through. Which NSG is dropping traffic? Which TCP ports should be opened?
+**Please see the [original script](https://github.com/erjosito/get_nsg_logs/blob/master/get_nsg_logs.py) from Jose Moreno for more insight into how the parsing / `get_nsg_logs.py` script works.**  This repository HEAVILY draws on the work done by Jose and we appreciate the great path he paved for us.
 
-One possibility is using Traffic Analytics. Traffic Analytics is a two-step process:
-1. NSG logs are stored in a storage account
-2. NSG logs from the storage account are processed (consolidated and enriched with additional information) and made queriable
+![alt text](./docs/img/architecture.png "Logo Title Text 1")
 
-One of the nicest features of Traffic Analytics is being able to query logs with the KQL (Kusto Query Language). For example, you can use this query to find out the dropped flows in the last 3 hours for IP address 1.2.3.4:
+This repository contains the code for an Azure Function that parses NSG Logs and extracts the anomalous outbound traffic.
 
-```
-AzureNetworkAnalytics_CL
-| where TimeGenerated >= ago(1h)
-| where SubType_s == "FlowLog"
-| where DeniedInFlows_d > 0 or DeniedOutFlows_d > 0
-| where SrcIP_s == "1.2.3.4"
-| project NSGName=split(NSGList_s, "/")[2],NSGRules_s,DeniedInFlows_d,DeniedOutFlows_d,SrcIP_s,DestIP_s,DestPort_d,L7Protocol_s
-```
+Specifically, it looks for a set of AND conditions.  The defaults hardcoded into the function are:
+* The file being parsed contain records from the past one (1) minute.
+* Destination IP Address is Not In a list of current IP's resolved from the list of [HTTP/HTTPS dependencies](https://docs.microsoft.com/en-us/azure/hdinsight/hdinsight-restrict-outbound-traffic#fqdn-httphttps-dependencies).
+* NSG Rule Is "UserRule_Port_other",
+* Direction Is "O" (i.e. outbound)
 
-However, you will notice that there is a time lag, and you will not find the very latest logs in Log Analytics. The original NSG Flow logs are stored in storage account, in JSON format, so you could get those logs using the Azure Storage SDK.
+## Necessary Resources and Steps
 
-You can deploy this Azure Function to parse and identify outbound traffic against an nsg rule of Port_other with an nsg named hdi_nsg.
+### Storage Accounts
+1. Deploy an HDInsight cluster with NSG logs streaming to a **Gen 2 Storage account**.  Let's call it *Storage A*.
+1. Ensure *Storage A* contains a container called **insights-logs-networksecuritygroupflowevent**.
+1. In *Storage A*, create a **storage queue** called **insights-logs-networksecuritygroupflowevent-queue**.
+1. Create a **second Gen 2 storage account** for the final outputs.  Let's call it *Storage B*.
+1. Create a container in *Storage B*  called **insights-logs-networksecuritygroupflowevent-output**.
 
+### Event Grid
+1. Create an **Event Grid Subscription** with the following parameters
+    * Event Schema: Event Grid Schema
+    * Topic Types: Storage Account
+    * Event Types: Blob Created
+    * Endpoint Type: Storage Queues
+    * ![alt text](./docs/img/event-grid-setup.PNG "Settings to apply for the event grid.")
+
+### Function
+1. Create an Azure **App Service Plan** with the following parameters:
+    * Operating System: Linux
+1. Create an **Azure Function** with the following parameters:
+    * OS: Linux
+    * Publish: Code
+    * Hosting Plan: App Service Plan (select the plan just created)
+    * Runtime Stack: Python
+    * Storage: Either option
+    * Application Insights: Enable
+1. Deploy the Azure Function in this repo with VS Code ([tutorial](https://docs.microsoft.com/en-us/azure/azure-functions/tutorial-vs-code-serverless-python)).
+1. Upload application settings ([see here](#sample-local.settings.json)) for **input_STORAGE** and **output_STORAGE**.
+
+### Logic App
+1. Create an **Azure Logic App** with the following configuration:
+    * Event Grid Trigger focusing on *Storage Account B*.
+    * In the trigger, include an Event Type Item of Blob Created.
+    * The following action would be a Send Email action from your email provider (e.g. Outlook, Gmail) to your security group's email alias.
+    * ![alt text](./docs/img/logic-app-setup.PNG "Settings to apply for the logic app.")
+
+
+## Sample local.settings.json
 You will need to add a local.settings.json / application settings of:
 
     {
